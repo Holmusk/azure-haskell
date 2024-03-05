@@ -1,0 +1,74 @@
+cabal-version:      3.0
+name:               azure-auth
+version:            0.1.0.0
+license:            MIT
+author:             Nitin Prakash
+maintainer:         prakash.nitin63@gmail.com
+category:           Azure
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common common-options
+    ghc-options:    -Wall
+                    -Wincomplete-uni-patterns
+                    -Wincomplete-record-updates
+                    -Wcompat
+                    -Widentities
+                    -Wredundant-constraints
+                    -fhide-source-paths
+                    -Wpartial-fields
+                    -Wunrecognised-pragmas
+                    -Wmissing-deriving-strategies
+                    -Wunticked-promoted-constructors
+                    -Winvalid-haddock
+                    -Woperator-whitespace
+                    -Wredundant-bang-patterns
+    build-depends:  base ^>=4.17.2.0
+    default-language:   GHC2021
+    default-extensions: DataKinds
+                        DerivingStrategies
+                        DerivingVia
+                        LambdaCase
+                        NoImportQualifiedPost
+                        NoGeneralisedNewtypeDeriving
+                        OverloadedStrings
+                        OverloadedLabels
+                        RecordWildCards
+                        TypeFamilies
+                        ViewPatterns
+    if os(linux)
+        ghc-options: -optl-fuse-ld=gold
+        ld-options:  -fuse-ld=gold
+
+library
+    import:           common-options
+    exposed-modules:  Azure
+                      Types
+                      Utils
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    aeson
+                    , bytestring
+                    , http-client
+                    , http-client-tls
+                    , http-types
+                    , servant
+                    , servant-client
+                    , text
+                    , time
+                    , unliftio
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+test-suite azure-auth-test
+    import:           common-options
+    default-language: Haskell2010
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.17.2.0,
+        azure-auth
