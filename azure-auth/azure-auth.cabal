@@ -1,6 +1,9 @@
 cabal-version:      3.0
 name:               azure-auth
 version:            0.1.0.0
+synopsis:           Boilerplace/startkit for azure in Haskell (using servant)
+description:        This provides from useful functionalities for starting out with Azure in Haskell.
+                    This includes authentication, Key vault, Blob storage and email communication related APIs.
 license:            MIT
 author:             Holmusk
 maintainer:         tech@@holmusk.com
@@ -9,8 +12,9 @@ build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 tested-with:        GHC == 9.0.2
                     GHC == 9.2.8
-                    GHC == 9.4.5
-                    GHC == 9.6.2
+                    GHC == 9.4.8
+                    GHC == 9.6.3
+                    GHC == 9.8.2
 
 common common-options
     ghc-options:    -Wall

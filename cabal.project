@@ -1,3 +1,2 @@
 packages:
-  azure-auth/
-
+  ./azure-auth
