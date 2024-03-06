@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Azure
+module Auth
     ( defaultAzureCredential
     , withManagedIdentity
     ) where

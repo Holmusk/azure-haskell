@@ -2,12 +2,15 @@ cabal-version:      3.0
 name:               azure-auth
 version:            0.1.0.0
 license:            MIT
-author:             Nitin Prakash
-maintainer:         prakash.nitin63@gmail.com
+author:             Holmusk
+maintainer:         tech@@holmusk.com
 category:           Azure
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
--- extra-source-files:
+tested-with:        GHC == 9.0.2
+                    GHC == 9.2.8
+                    GHC == 9.4.5
+                    GHC == 9.6.2
 
 common common-options
     ghc-options:    -Wall
@@ -24,7 +27,8 @@ common common-options
                     -Winvalid-haddock
                     -Woperator-whitespace
                     -Wredundant-bang-patterns
-    build-depends:  base ^>=4.17.2.0
+                    -Wunused-packages
+    build-depends:  base >= 4.7 && <5
     default-language:   GHC2021
     default-extensions: DataKinds
                         DerivingStrategies
@@ -43,16 +47,13 @@ common common-options
 
 library
     import:           common-options
-    exposed-modules:  Azure
+    exposed-modules:  Auth
                       Types
                       Utils
     -- other-modules:
     -- other-extensions:
     build-depends:    aeson
-                    , bytestring
                     , http-client
-                    , http-client-tls
-                    , http-types
                     , servant
                     , servant-client
                     , text
@@ -70,5 +71,5 @@ test-suite azure-auth-test
     hs-source-dirs:   test
     main-is:          Main.hs
     build-depends:
-        base ^>=4.17.2.0,
+        base >= 4.7 && <5,
         azure-auth
