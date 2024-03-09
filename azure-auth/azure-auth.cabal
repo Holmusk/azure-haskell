@@ -6,7 +6,7 @@ description:        This provides from useful functionalities for starting out w
                     This includes authentication, Key vault, Blob storage and email communication related APIs.
 license:            MIT
 author:             Holmusk
-maintainer:         tech@@holmusk.com
+maintainer:         tech@holmusk.com
 category:           Azure
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
