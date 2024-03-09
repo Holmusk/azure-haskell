@@ -2,4 +2,4 @@ resolver: lts-21.25 # based on ghc-9.4.8
 
 packages:
 - ./azure-auth
-  
+- ./azure-key-vault

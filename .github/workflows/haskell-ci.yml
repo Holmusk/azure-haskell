@@ -145,6 +145,7 @@ jobs:
         run: |
           touch cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/./azure-auth" >> cabal.project
+          echo "packages: $GITHUB_WORKSPACE/source/./azure-key-vault" >> cabal.project
           cat cabal.project
       - name: sdist
         run: |
@@ -158,15 +159,20 @@ jobs:
         run: |
           PKGDIR_azure_auth="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/azure-auth-[0-9.]*')"
           echo "PKGDIR_azure_auth=${PKGDIR_azure_auth}" >> "$GITHUB_ENV"
+          PKGDIR_azure_key_vault="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/azure-key-vault-[0-9.]*')"
+          echo "PKGDIR_azure_key_vault=${PKGDIR_azure_key_vault}" >> "$GITHUB_ENV"
           rm -f cabal.project cabal.project.local
           touch cabal.project
           touch cabal.project.local
           echo "packages: ${PKGDIR_azure_auth}" >> cabal.project
+          echo "packages: ${PKGDIR_azure_key_vault}" >> cabal.project
           echo "package azure-auth" >> cabal.project
+          echo "    ghc-options: -Werror=missing-methods" >> cabal.project
+          echo "package azure-key-vault" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           cat >> cabal.project <<EOF
           EOF
-          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(azure-auth)$/; }' >> cabal.project.local
+          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(azure-auth|azure-key-vault)$/; }' >> cabal.project.local
           cat cabal.project
           cat cabal.project.local
       - name: dump install plan
@@ -195,6 +201,8 @@ jobs:
       - name: cabal check
         run: |
           cd ${PKGDIR_azure_auth} || false
+          ${CABAL} -vnormal check
+          cd ${PKGDIR_azure_key_vault} || false
           ${CABAL} -vnormal check
       - name: haddock
         run: |
