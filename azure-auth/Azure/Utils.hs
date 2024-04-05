@@ -1,9 +1,10 @@
-module Utils where
+module Azure.Utils where
 
 import Data.Time (addUTCTime, getCurrentTime, secondsToNominalDiffTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
-import Types (ExpiresOn)
 import UnliftIO (MonadIO (..))
+
+import Azure.Types (ExpiresOn)
 
 import qualified Text.Read as Text
 import qualified Data.Text as Text

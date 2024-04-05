@@ -1,4 +1,4 @@
-module Types
+module Azure.Types
     ( ExpiresOn
     , AccessToken (..)
     , Token

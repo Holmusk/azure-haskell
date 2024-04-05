@@ -4,12 +4,10 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Auth
+module Azure.Auth
     ( defaultAzureCredential
     , withManagedIdentity
     ) where
-
-import Types (AccessToken (..), Token, readToken, updateToken)
 
 import Control.Monad.IO.Class (MonadIO)
 import Data.Data (Proxy (..))
@@ -19,7 +17,9 @@ import Servant.API (Get, Header', JSON, Optional, QueryParam', Required, Strict,
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwIO)
 import UnliftIO.Environment (lookupEnv)
-import Utils (isExpired)
+
+import Azure.Utils (isExpired)
+import Azure.Types (AccessToken (..), Token, readToken, updateToken)
 
 import qualified Data.Text as Text
 

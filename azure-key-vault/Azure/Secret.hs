@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Secret
+module Azure.Secret
     ( KeyVaultResponse (..)
     , GetSecretFromVaultApi
     , getSecretFromVault
@@ -18,8 +18,8 @@ import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, 
 import UnliftIO (MonadIO (..), throwIO)
 import GHC.Generics (Generic)
 
-import Auth (defaultAzureCredential)
-import Types (AccessToken (..), Token)
+import Azure.Auth (defaultAzureCredential)
+import Azure.Types (AccessToken (..), Token)
 
 import qualified Data.Text as Text
 
@@ -65,8 +65,7 @@ callKeyVaultClient action secretName vaultHost tokenStore = do
                 (action secretName 7.4 ("Bearer " <> atAccessToken authHeader))
                 (mkClientEnv manager $ BaseUrl Https (Text.unpack vaultHost) 443 "")
     case res of
-        Left err -> do
+        Left err ->
             throwIO err
-        Right response -> do
-            liftIO $ putStrLn $ "Successfully performed request: " <> show response
+        Right response ->
             pure response
