@@ -7,6 +7,7 @@
 module Azure.Auth
     ( defaultAzureCredential
     , withManagedIdentity
+    , withManagedIdentityEither
     ) where
 
 import Control.Monad.IO.Class (MonadIO)
@@ -17,6 +18,8 @@ import Servant.API (Get, Header', JSON, Optional, QueryParam', Required, Strict,
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwIO)
 import UnliftIO.Environment (lookupEnv)
+import Data.Typeable (Typeable)
+import Control.Exception (Exception)
 
 import Azure.Utils (isExpired)
 import Azure.Types (AccessToken (..), Token, readToken, updateToken)
@@ -59,6 +62,10 @@ defaultAzureCredential ::
     m AccessToken
 defaultAzureCredential = withManagedIdentity
 
+-- | Fetches an Access token for autheticating different azure services
+-- All errors are thrown in IO.
+--
+-- For version where errors are returned in a @Left@ branch, use @withManagedIdentityEither@
 withManagedIdentity ::
     MonadIO m =>
     -- | ClientId
@@ -69,13 +76,31 @@ withManagedIdentity ::
     Token ->
     m AccessToken
 withManagedIdentity clientId resourceUri tokenStore = do
+    token <- withManagedIdentityEither clientId resourceUri tokenStore
+    case token of
+        Left err -> throwIO err
+        Right tok -> pure tok
+
+withManagedIdentityEither ::
+    MonadIO m =>
+    -- | ClientId
+    Maybe Text ->
+    -- | Resource URI
+    Text ->
+    -- | Access Token
+    Token ->
+    m (Either AccessTokenException AccessToken)
+withManagedIdentityEither clientId resourceUri tokenStore = do
     identityEndpoint <- lookupEnv "IDENTITY_ENDPOINT"
     identityHeader <- lookupEnv "IDENTITY_HEADER"
     case (,) <$> identityEndpoint <*> identityEndpoint of
         -- TODO: incorporate @IDENTITY_ENDPOINT@ into this logic
         --       If it's present, we can directly make a call to
         --       to it and retrieve the access token.
-        Just (_endpoint, _header) -> undefined
+        -- This functionality is only available on App service and not standalone
+        -- VM instances.
+        Just (_endpoint, _header) ->
+            pure . Left $ TokenEndpointNotAvailable "Fetching Access token on an app service is not yet supported"
         -- We do not have the @IDENTITY_ENDPOINT@. Which means that that
         -- the VM is possibly standalone and not inside an app service.
         -- Therefore, in order to get the access token details, we need
@@ -88,7 +113,7 @@ withManagedIdentity clientId resourceUri tokenStore = do
                 Nothing -> do
                     newToken <- callAzureIMDSEndpoint getAzureIMDSClient resourceUri clientId (Text.pack <$> identityHeader)
                     updateToken tokenStore (Just newToken)
-                    pure newToken
+                    pure $ Right newToken
                 Just oldToken@AccessToken{atExpiresOn} -> do
                     -- we do have a token but we should check for it's validity
                     isTokenExpired <- isExpired atExpiresOn
@@ -97,8 +122,15 @@ withManagedIdentity clientId resourceUri tokenStore = do
                             -- get a new token and write to the env
                             newToken <- callAzureIMDSEndpoint getAzureIMDSClient resourceUri clientId (Text.pack <$> identityHeader)
                             updateToken tokenStore (Just newToken)
-                            pure newToken
-                        else pure oldToken
+                            pure $ Right newToken
+                        else pure $ Right oldToken
+
+-- | An exception that can occur when generating an @AccessToken@
+data AccessTokenException
+    = TokenEndpointNotAvailable Text
+    deriving stock (Show, Typeable)
+
+instance Exception AccessTokenException
 
 type AzureIMDSEndpoint =
     "metadata"
