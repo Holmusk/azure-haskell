@@ -27,7 +27,8 @@ import Azure.Types (AccessToken (..), Token, readToken, updateToken)
 import qualified Data.Text as Text
 
 {- | IMDS is a REST API that's available at a well-known, non-routable IP address ( 169.254. 169.254 ).
-It can only be accessed from within the VM. Communication between the VM and IMDS never leaves the host.
+It is a local-only link can only be accessed from within the VM. 
+Communication between the VM and IMDS never leaves the host.
 -}
 imdsHost :: String
 imdsHost = "169.254.169.254"
