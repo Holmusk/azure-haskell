@@ -3,3 +3,4 @@ resolver: lts-22.26 # based on ghc-9.6.5
 packages:
 - ./azure-auth
 - ./azure-key-vault
+- ./azure-blob-storage

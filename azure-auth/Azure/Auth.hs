@@ -10,24 +10,24 @@ module Azure.Auth
     , withManagedIdentityEither
     ) where
 
+import Control.Exception (Exception)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
+import Data.Typeable (Typeable)
 import Network.HTTP.Client (defaultManagerSettings, newManager)
 import Servant.API (Get, Header', JSON, Optional, QueryParam', Required, Strict, (:>))
-import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
+import Servant.Client (BaseUrl (..), ClientError (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwIO)
 import UnliftIO.Environment (lookupEnv)
-import Data.Typeable (Typeable)
-import Control.Exception (Exception)
 
-import Azure.Utils (isExpired)
 import Azure.Types (AccessToken (..), Token, readToken, updateToken)
+import Azure.Utils (isExpired)
 
 import qualified Data.Text as Text
 
 {- | IMDS is a REST API that's available at a well-known, non-routable IP address ( 169.254. 169.254 ).
-It is a local-only link can only be accessed from within the VM. 
+It is a local-only link can only be accessed from within the VM.
 Communication between the VM and IMDS never leaves the host.
 -}
 imdsHost :: String
@@ -50,7 +50,6 @@ TODO: Implement other auth flows such as @withAzureCli@ and @withEnvironment@ an
         1. EnvironmentCredential
         2. Managed Identity (Only this is implemented at the moment)
         3. Azure CLI
-
 -}
 defaultAzureCredential ::
     MonadIO m =>
@@ -63,10 +62,11 @@ defaultAzureCredential ::
     m AccessToken
 defaultAzureCredential = withManagedIdentity
 
--- | Fetches an Access token for autheticating different azure services
--- All errors are thrown in IO.
---
--- For version where errors are returned in a @Left@ branch, use @withManagedIdentityEither@
+{- | Fetches an Access token for autheticating different azure services
+All errors are thrown in IO.
+
+For version where errors are returned in a @Left@ branch, use @withManagedIdentityEither@
+-}
 withManagedIdentity ::
     MonadIO m =>
     -- | ClientId
@@ -111,24 +111,31 @@ withManagedIdentityEither clientId resourceUri tokenStore = do
             tk <- readToken tokenStore
             case tk of
                 -- In case there is no existing token, we fetch a new one
-                Nothing -> do
-                    newToken <- callAzureIMDSEndpoint getAzureIMDSClient resourceUri clientId (Text.pack <$> identityHeader)
-                    updateToken tokenStore (Just newToken)
-                    pure $ Right newToken
+                Nothing -> eitherGetToken identityHeader
                 Just oldToken@AccessToken{atExpiresOn} -> do
                     -- we do have a token but we should check for it's validity
                     isTokenExpired <- isExpired atExpiresOn
                     if isTokenExpired
-                        then do
-                            -- get a new token and write to the env
-                            newToken <- callAzureIMDSEndpoint getAzureIMDSClient resourceUri clientId (Text.pack <$> identityHeader)
-                            updateToken tokenStore (Just newToken)
-                            pure $ Right newToken
+                        then eitherGetToken identityHeader
                         else pure $ Right oldToken
+  where
+    eitherGetToken :: MonadIO m => Maybe String -> m (Either AccessTokenException AccessToken)
+    eitherGetToken idHeader = do
+        newToken <- callAzureIMDSEndpoint getAzureIMDSClient resourceUri clientId (Text.pack <$> idHeader)
+        case newToken of
+            Left err -> pure . Left $ IMDSClientError err
+            Right tok -> do
+                updateToken tokenStore (Just tok)
+                pure $ Right tok
 
 -- | An exception that can occur when generating an @AccessToken@
 data AccessTokenException
-    = TokenEndpointNotAvailable Text
+    = -- | We are trying to fetch an access token from an endpoint that does not exist/not
+      -- available at the moment. In our case, we use this for app service.
+      TokenEndpointNotAvailable !Text
+    | -- | Something went wrong while making HTTP call access token endpoing.
+      -- This wraps servant's @ClientError@.
+      IMDSClientError !ClientError
     deriving stock (Show, Typeable)
 
 instance Exception AccessTokenException
@@ -160,7 +167,7 @@ callAzureIMDSEndpoint ::
     Text ->
     Maybe Text ->
     Maybe Text ->
-    m AccessToken
+    m (Either ClientError AccessToken)
 callAzureIMDSEndpoint action resourceUri clientId identityHeader = do
     manager <- liftIO $ newManager defaultManagerSettings
     res <-
@@ -170,6 +177,6 @@ callAzureIMDSEndpoint action resourceUri clientId identityHeader = do
                 (mkClientEnv manager $ BaseUrl Http imdsHost 80 "")
     case res of
         Left err ->
-            throwIO err
+            pure $ Left err
         Right response ->
-            pure response
+            pure $ Right response

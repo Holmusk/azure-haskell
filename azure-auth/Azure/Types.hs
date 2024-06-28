@@ -20,9 +20,6 @@ Data type representing a response body when GET request is made
 using the Azure Instance Metadata Service (IMDS) endpoint.
 
 Source: https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/how-to-use-vm-token#get-a-token-using-http
-
-TODO: Some of TokenType and Resource can possibly be represented using a sum type
-      along with FromJSON instance.
 -}
 data AccessToken = AccessToken
     { atAccessToken :: !Text
