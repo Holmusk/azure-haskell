@@ -58,7 +58,7 @@ callKeyVaultClient ::
     m KeyVaultResponse
 callKeyVaultClient action secretName vaultHost tokenStore = do
     manager <- liftIO newTlsManager
-    authHeader <- defaultAzureCredential Nothing "https://vault.azure.net" tokenStore
+    authHeader <- defaultAzureCredential Nothing vaultHost tokenStore
     res <-
         liftIO $
             runClientM

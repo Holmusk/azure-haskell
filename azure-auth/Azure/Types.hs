@@ -1,6 +1,6 @@
 module Azure.Types
-    ( ExpiresOn
-    , AccessToken (..)
+    ( AccessToken (..)
+    , ExpiresOn
     , Token
     , newEmptyToken
     , updateToken
@@ -29,17 +29,15 @@ data AccessToken = AccessToken
     -- ^ The requested access token. When you call a secured REST API, the
     -- token is embedded in the Authorization request header field as a @bearer@
     -- token, allowing the API to authenticate the caller.
-    , atRefreshToken :: !Text
-    -- ^ Not used by managed identities for Azure resources.
-    , atExpiresIn :: !Integer
+    , atExpiresIn :: !Text
     -- ^ The number of seconds the access token continues to be valid, before
     -- expiring, from time of issuance. Time of issuance can be found in
-    -- the token's @iat@ claim.
+    -- the token's @iat@ claim. This is represented as a string type.
     , atExpiresOn :: !ExpiresOn
     -- ^ The timespan when the access token expires. The date is
     -- represented as the number of seconds from @1970-01-01T0:0:0Z UTC@
     -- (corresponds to the token's @exp@ claim).
-    -- NOTE: expires_on is a String version of unix epoch time, not an integer.
+    -- NOTE: @expires_on@ is a string version of unix epoch time, not an integer.
     , atResource :: !Text
     -- ^ The resource the access token was requested for, which
     -- matches the resource query string parameter of the request.
@@ -52,7 +50,6 @@ data AccessToken = AccessToken
 instance FromJSON AccessToken where
     parseJSON = withObject "AccessToken" $ \o -> do
         atAccessToken <- o .: "access_token"
-        atRefreshToken <- o .: "refresh_token"
         atExpiresIn <- o .: "expires_in"
         atExpiresOn <- o .: "expires_on"
         atResource <- o .: "resource"
