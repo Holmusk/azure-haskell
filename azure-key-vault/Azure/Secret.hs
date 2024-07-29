@@ -12,11 +12,11 @@ module Azure.Secret
 import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Data (Proxy (..))
 import Data.Text (Text)
+import GHC.Generics (Generic)
 import Network.HTTP.Client.TLS (newTlsManager)
 import Servant.API (Capture, Get, Header', JSON, QueryParam', Required, Strict, (:>))
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwIO)
-import GHC.Generics (Generic)
 
 import Azure.Auth (defaultAzureCredential)
 import Azure.Types (AccessToken (..), Token)
