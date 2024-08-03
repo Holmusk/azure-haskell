@@ -11,21 +11,21 @@ module Azure.GetBlob
     , getBlobObjectEither
     ) where
 
+import Azure.Auth (defaultAzureCredential)
 import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
 import Data.ByteString (ByteString, fromStrict, toStrict)
 import Data.Data (Proxy (..))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Text (Text)
+import GHC.Generics (Generic)
 import Network.HTTP.Client.TLS (newTlsManager)
 import Network.HTTP.Media (MediaType)
 import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwString)
 
-import Azure.Auth (defaultAzureCredential)
 import qualified Azure.Types as Auth
 import qualified Data.Text as Text
-import GHC.Generics (Generic)
 import qualified Network.HTTP.Media as M
 
 blobStorageResourceUrl :: Text
