@@ -68,6 +68,7 @@ library
                     , servant-xml ^>= 1.0.3
                     , xmlbf
                     , text
+                    , time
                     , unliftio
                     , unordered-containers
     hs-source-dirs:   src

@@ -8,6 +8,12 @@ module Azure.Blob.Types
     , BlobType (..)
     , UserDelegationRequest (..)
     , UserDelegationResponse (..)
+    , SasTokenExpiry (..)
+    , Url (..)
+    , SasPermissions (..)
+    , sasPermissionsToText
+    , SasResource (..)
+    , sasResourceToText
     ) where
 
 import Data.Aeson (ToJSON (..), object, (.=))
@@ -104,6 +110,17 @@ instance FromXml UserDelegationResponse where
         udrSignedKeyVersion <- pElement "SignedVersion" pText
         udrValue <- pElement "Value" pText
         pure UserDelegationResponse{..}
+
+-- | Newtype for an url that can be fetched directly
+newtype Url = Url
+    { unUrl :: Text
+    }
+    deriving stock (Eq, Show, Generic)
+
+-- | For an azure action to be turned into a signed url
+newtype SasTokenExpiry = SasTokenExpiry
+    { unSasTokenExpiry :: Int
+    }
 
 data SasPermissions
     = SasRead

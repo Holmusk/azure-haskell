@@ -9,7 +9,6 @@ module Azure.UserDelegationKey
     , getUserDelegationKeyApi
     ) where
 
-import Azure.Auth (defaultAzureCredential)
 import Azure.Blob.Types
     ( AccountName (..)
     , UserDelegationRequest (..)
@@ -25,9 +24,6 @@ import UnliftIO (MonadIO (..))
 
 import qualified Azure.Types as Auth
 import qualified Data.Text as Text
-
-blobStorageResourceUrl :: Text
-blobStorageResourceUrl = "https://storage.azure.com/"
 
 -- These type aliases always hold static values.
 -- Refer to azure docs: https://learn.microsoft.com/en-us/rest/api/storageservices/get-user-delegation-key#request
@@ -52,12 +48,11 @@ getUserDelegationKeyApi = client (Proxy @GetUserDelegationKeyApi)
 callGetUserDelegationKeyApi ::
     (Restype -> Comp -> Text -> Text -> UserDelegationRequest -> ClientM UserDelegationResponse) ->
     AccountName ->
-    Auth.Token ->
+    Auth.AccessToken ->
     UserDelegationRequest ->
     IO (Either Text UserDelegationResponse)
-callGetUserDelegationKeyApi action accountName tokenStore req = do
+callGetUserDelegationKeyApi action accountName Auth.AccessToken{atAccessToken} req = do
     manager <- liftIO newTlsManager
-    Auth.AccessToken{atAccessToken} <- liftIO $ defaultAzureCredential Nothing blobStorageResourceUrl tokenStore
     res <-
         liftIO $
             runClientM
