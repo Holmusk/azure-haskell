@@ -56,13 +56,19 @@ library
                       Azure.GetBlob
                       Azure.DeleteBlob
                       Azure.PutBlob
+                      Azure.UserDelegationKey
+                      Azure.SharedAccessSignature
     build-depends:    azure-auth
+                    , aeson
                     , bytestring
                     , http-client-tls
                     , http-media
                     , servant
                     , servant-client
+                    , servant-xml ^>= 1.0.3
+                    , xmlbf
                     , text
                     , unliftio
+                    , unordered-containers
     hs-source-dirs:   src
     default-language: Haskell2010
