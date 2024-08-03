@@ -54,6 +54,7 @@ library
     import:           common-options
     exposed-modules:  Azure.Blob.Types
                       Azure.GetBlob
+                      Azure.DeleteBlob
                       Azure.PutBlob
     build-depends:    azure-auth
                     , bytestring
