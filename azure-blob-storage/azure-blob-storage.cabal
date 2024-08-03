@@ -53,10 +53,12 @@ common common-options
 library
     import:           common-options
     exposed-modules:  Azure.Blob.Types
-                      Azure.Clients
+                      Azure.GetBlob
+                      Azure.PutBlob
     build-depends:    azure-auth
                     , bytestring
                     , http-client-tls
+                    , http-media
                     , servant
                     , servant-client
                     , text

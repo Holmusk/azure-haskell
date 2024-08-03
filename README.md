@@ -14,10 +14,10 @@ started. Covered areas:
 
 To build the entire project, run:
 ```
-stack build
+cabal build all
 ```
 
 In order to build individual components of the library, `cd` into the package and run:
 ```
-cabal build
+cabal build -O0
 ```

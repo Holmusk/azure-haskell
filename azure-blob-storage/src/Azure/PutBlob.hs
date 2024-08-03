@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Azure.Clients
+module Azure.PutBlob
     ( putBlobObjectEither
     , putBlobObject
     ) where
