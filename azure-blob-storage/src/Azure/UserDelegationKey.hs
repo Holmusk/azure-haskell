@@ -59,7 +59,6 @@ callGetUserDelegationKeyApi action accountName Auth.AccessToken{atAccessToken} r
                 (action showResType showComp ("Bearer " <> atAccessToken) "2022-11-02" req)
                 (mkClientEnv manager $ BaseUrl Https mkHostUrl 443 "")
     pure $ case res of
-        -- TODO: this should actually log the error
         Left err ->
             Left . Text.pack $ show err
         Right resp ->

@@ -60,9 +60,12 @@ library
                       Azure.SharedAccessSignature
     build-depends:    azure-auth
                     , aeson
+                    , base64-bytestring
                     , bytestring
+                    , cryptohash-sha256
                     , http-client-tls
                     , http-media
+                    , http-types
                     , servant
                     , servant-client
                     , servant-xml ^>= 1.0.3

@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Azure.SharedAccessSignature
     ( generateSas
     ) where
@@ -17,12 +20,17 @@ import Azure.Blob.Types
     , sasResourceToText
     )
 import Azure.UserDelegationKey (callGetUserDelegationKeyApi, getUserDelegationKeyApi)
+import Crypto.Hash.SHA256 (hmac)
 import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime (..), addUTCTime, formatTime, getCurrentTime)
 import Data.Time.Format (defaultTimeLocale)
+import Network.HTTP.Types.URI (urlEncode)
 import UnliftIO (MonadIO (..))
 
 import qualified Azure.Types as Auth
+import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
 
 blobStorageResourceUrl :: Text
@@ -141,3 +149,11 @@ generateSas accountName containerName blobName (SasTokenExpiry expiry) tokenStor
     -- https://learn.microsoft.com/en-us/rest/api/storageservices/formatting-datetime-values
     formatToAzureTime :: UTCTime -> Text
     formatToAzureTime time = Text.pack $ formatTime defaultTimeLocale "%FT%TZ" time
+
+    buildSignature :: Text -> Text -> Text
+    buildSignature stringToSign secret =
+        let decodedSecret = B64.decodeLenient (C8.pack (Text.unpack secret))
+            encodedStringToSign = C8.pack (Text.unpack stringToSign)
+            hashedBytes = hmac decodedSecret encodedStringToSign
+            encodedSignature = B64.encode hashedBytes
+         in decodeUtf8 encodedSignature
