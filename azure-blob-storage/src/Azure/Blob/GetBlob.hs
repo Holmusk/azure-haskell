@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Azure.GetBlob
+module Azure.Blob.GetBlob
     ( getBlobObject
     , getBlobObjectEither
     ) where
@@ -74,6 +74,9 @@ type GetBlobApi =
         :> Header' '[Required, Strict] "x-ms-version" Text
         :> Get '[Blob] ByteString
 
+-- TODO: this is more of a test at the moment.
+-- GET endpoint should accept any blob that is available and not just
+-- rely on certain mime types
 instance Accept Blob where
     contentTypes :: Proxy Blob -> NonEmpty MediaType
     contentTypes _ =

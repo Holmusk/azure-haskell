@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Azure.SharedAccessSignature
+module Azure.Blob.SharedAccessSignature
     ( generateSas
     ) where
 
@@ -19,7 +19,7 @@ import Azure.Blob.Types
     , sasPermissionsToText
     , sasResourceToText
     )
-import Azure.UserDelegationKey (callGetUserDelegationKeyApi, getUserDelegationKeyApi)
+import Azure.Blob.UserDelegationKey (callGetUserDelegationKeyApi, getUserDelegationKeyApi)
 import Crypto.Hash.SHA256 (hmac)
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -36,6 +36,7 @@ import qualified Data.Text as Text
 blobStorageResourceUrl :: Text
 blobStorageResourceUrl = "https://storage.azure.com/"
 
+-- TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
 generateSas ::
     MonadIO m =>
     AccountName ->

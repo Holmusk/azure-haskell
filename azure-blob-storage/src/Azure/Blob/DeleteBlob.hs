@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Azure.DeleteBlob
+module Azure.Blob.DeleteBlob
     ( deleteBlobObject
     , deleteBlobObjectEither
     ) where

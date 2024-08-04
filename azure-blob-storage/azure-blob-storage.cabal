@@ -51,12 +51,13 @@ common common-options
 
 library
     import:           common-options
-    exposed-modules:  Azure.Blob.Types
-                      Azure.GetBlob
-                      Azure.DeleteBlob
-                      Azure.PutBlob
-                      Azure.UserDelegationKey
-                      Azure.SharedAccessSignature
+    exposed-modules:  Azure.Blob
+                      Azure.Blob.GetBlob
+                      Azure.Blob.DeleteBlob
+                      Azure.Blob.Types
+                      Azure.Blob.UserDelegationKey
+                      Azure.Blob.PutBlob
+                      Azure.Blob.SharedAccessSignature
     build-depends:    azure-auth
                     , aeson
                     , base64-bytestring

@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Azure.UserDelegationKey
+module Azure.Blob.UserDelegationKey
     ( callGetUserDelegationKeyApi
     , getUserDelegationKeyApi
     ) where
