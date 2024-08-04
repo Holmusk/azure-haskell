@@ -48,11 +48,6 @@ jobs:
             compilerVersion: 9.2.8
             setup-method: ghcup
             allow-failure: false
-          - compiler: ghc-9.0.2
-            compilerKind: ghc
-            compilerVersion: 9.0.2
-            setup-method: ghcup
-            allow-failure: false
       fail-fast: false
     steps:
       - name: apt
@@ -146,6 +141,7 @@ jobs:
           touch cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/./azure-auth" >> cabal.project
           echo "packages: $GITHUB_WORKSPACE/source/./azure-key-vault" >> cabal.project
+          echo "packages: $GITHUB_WORKSPACE/source/./azure-blob-storage" >> cabal.project
           cat cabal.project
       - name: sdist
         run: |
@@ -161,18 +157,23 @@ jobs:
           echo "PKGDIR_azure_auth=${PKGDIR_azure_auth}" >> "$GITHUB_ENV"
           PKGDIR_azure_key_vault="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/azure-key-vault-[0-9.]*')"
           echo "PKGDIR_azure_key_vault=${PKGDIR_azure_key_vault}" >> "$GITHUB_ENV"
+          PKGDIR_azure_blob_storage="$(find "$GITHUB_WORKSPACE/unpacked" -maxdepth 1 -type d -regex '.*/azure-blob-storage-[0-9.]*')"
+          echo "PKGDIR_azure_blob_storage=${PKGDIR_azure_blob_storage}" >> "$GITHUB_ENV"
           rm -f cabal.project cabal.project.local
           touch cabal.project
           touch cabal.project.local
           echo "packages: ${PKGDIR_azure_auth}" >> cabal.project
           echo "packages: ${PKGDIR_azure_key_vault}" >> cabal.project
+          echo "packages: ${PKGDIR_azure_blob_storage}" >> cabal.project
           echo "package azure-auth" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           echo "package azure-key-vault" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
+          echo "package azure-blob-storage" >> cabal.project
+          echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           cat >> cabal.project <<EOF
           EOF
-          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(azure-auth|azure-key-vault)$/; }' >> cabal.project.local
+          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(azure-auth|azure-blob-storage|azure-key-vault)$/; }' >> cabal.project.local
           cat cabal.project
           cat cabal.project.local
       - name: dump install plan
@@ -195,14 +196,13 @@ jobs:
       - name: build
         run: |
           $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --write-ghc-environment-files=always
-      - name: tests
-        run: |
-          $CABAL v2-test $ARG_COMPILER $ARG_TESTS $ARG_BENCH all --test-show-details=direct
       - name: cabal check
         run: |
           cd ${PKGDIR_azure_auth} || false
           ${CABAL} -vnormal check
           cd ${PKGDIR_azure_key_vault} || false
+          ${CABAL} -vnormal check
+          cd ${PKGDIR_azure_blob_storage} || false
           ${CABAL} -vnormal check
       - name: haddock
         run: |
