@@ -14,6 +14,7 @@ import Azure.Blob.Types
     , UserDelegationRequest (..)
     , UserDelegationResponse (..)
     )
+import Azure.Blob.Utils (mkBlobHostUrl)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
 import Network.HTTP.Client.TLS (newTlsManager)
@@ -57,7 +58,7 @@ callGetUserDelegationKeyApi action accountName Auth.AccessToken{atAccessToken} r
         liftIO $
             runClientM
                 (action showResType showComp ("Bearer " <> atAccessToken) "2022-11-02" req)
-                (mkClientEnv manager $ BaseUrl Https mkHostUrl 443 "")
+                (mkClientEnv manager $ BaseUrl Https (mkBlobHostUrl accountName) 443 "")
     pure $ case res of
         Left err ->
             Left . Text.pack $ show err
@@ -66,4 +67,3 @@ callGetUserDelegationKeyApi action accountName Auth.AccessToken{atAccessToken} r
   where
     showComp = "userdelegationkey"
     showResType = "service"
-    mkHostUrl = Text.unpack (unAccountName accountName) <> ".blob.core.windows.net"

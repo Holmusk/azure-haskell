@@ -24,12 +24,10 @@ import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwString)
 
+import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import qualified Azure.Types as Auth
 import qualified Data.Text as Text
 import qualified Network.HTTP.Media as M
-
-blobStorageResourceUrl :: Text
-blobStorageResourceUrl = "https://storage.azure.com/"
 
 getBlobObject ::
     MonadIO m =>
@@ -106,11 +104,9 @@ callGetBlobClient action GetBlob{accountName, containerName, blobName, tokenStor
         liftIO $
             runClientM
                 (action containerName blobName ("Bearer " <> atAccessToken) "2020-04-08")
-                (mkClientEnv manager $ BaseUrl Https mkHostUrl 443 "")
+                (mkClientEnv manager $ BaseUrl Https (mkBlobHostUrl accountName) 443 "")
     pure $ case res of
         Left err -> do
             Left . Text.pack $ show err
         Right response -> do
             Right response
-  where
-    mkHostUrl = Text.unpack (unAccountName accountName) <> ".blob.core.windows.net"

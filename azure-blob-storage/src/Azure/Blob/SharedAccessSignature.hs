@@ -20,6 +20,7 @@ import Azure.Blob.Types
     , sasResourceToText
     )
 import Azure.Blob.UserDelegationKey (callGetUserDelegationKeyApi, getUserDelegationKeyApi)
+import Azure.Blob.Utils (blobStorageResourceUrl)
 import Crypto.Hash.SHA256 (hmac)
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
@@ -32,9 +33,6 @@ import qualified Azure.Types as Auth
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
-
-blobStorageResourceUrl :: Text
-blobStorageResourceUrl = "https://storage.azure.com/"
 
 -- TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
 generateSas ::

@@ -12,6 +12,7 @@ module Azure.Blob.DeleteBlob
 
 import Azure.Auth (defaultAzureCredential)
 import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
+import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -22,9 +23,6 @@ import UnliftIO (MonadIO (..), throwString)
 
 import qualified Azure.Types as Auth
 import qualified Data.Text as Text
-
-blobStorageResourceUrl :: Text
-blobStorageResourceUrl = "https://storage.azure.com/"
 
 deleteBlobObject ::
     MonadIO m =>
@@ -80,11 +78,9 @@ callDeleteBlobClient action DeleteBlob{accountName, containerName, blobName, tok
         liftIO $
             runClientM
                 (action containerName blobName ("Bearer " <> atAccessToken) "2020-04-08")
-                (mkClientEnv manager $ BaseUrl Https mkHostUrl 443 "")
+                (mkClientEnv manager $ BaseUrl Https (mkBlobHostUrl accountName) 443 "")
     pure $ case res of
         Left err -> do
             Left . Text.pack $ show err
         Right _ -> do
             pure ()
-  where
-    mkHostUrl = Text.unpack (unAccountName accountName) <> ".blob.core.windows.net"

@@ -9,7 +9,8 @@ module Azure.Blob.PutBlob
     ) where
 
 import Azure.Auth (defaultAzureCredential)
-import Azure.Blob.Types (AccountName (..), BlobName (..), BlobType (..), ContainerName (..), PutBlob (..))
+import Azure.Blob.Types (BlobName (..), BlobType (..), ContainerName (..), PutBlob (..))
+import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import Data.ByteString (ByteString)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
@@ -20,9 +21,6 @@ import UnliftIO (MonadIO (..), throwString)
 
 import qualified Azure.Types as Auth
 import qualified Data.Text as Text
-
-blobStorageResourceUrl :: Text
-blobStorageResourceUrl = "https://storage.azure.com/"
 
 {- | Upload a blob to a blob container.
 
@@ -79,11 +77,9 @@ callPutBlobClient action PutBlob{accountName, containerName, blobName, tokenStor
         liftIO $
             runClientM
                 (action containerName blobName ("Bearer " <> atAccessToken) "2020-04-08" (Text.pack $ show BlockBlob) body)
-                (mkClientEnv manager $ BaseUrl Https mkHostUrl 443 "")
+                (mkClientEnv manager $ BaseUrl Https (mkBlobHostUrl accountName) 443 "")
     pure $ case res of
         Left err ->
             Left . Text.pack $ show err
         Right _ ->
             Right ()
-  where
-    mkHostUrl = Text.unpack (unAccountName accountName) <> ".blob.core.windows.net"
