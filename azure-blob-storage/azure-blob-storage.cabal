@@ -1,5 +1,5 @@
 cabal-version:      3.0
-name:               azure-key-vault
+name:               azure-blob-storage
 version:            0.1.0.0
 license:            MIT
 license-file:       LICENSE
@@ -49,15 +49,30 @@ common common-options
         ghc-options: -optl-fuse-ld=gold
         ld-options:  -fuse-ld=gold
 
-
 library
     import:           common-options
-    exposed-modules:  Azure.Secret
-    build-depends:    aeson
-                    , azure-auth
+    exposed-modules:  Azure.Blob.DeleteBlob
+                      Azure.Blob.GetBlob
+                      Azure.Blob.PutBlob
+                      Azure.Blob.Types
+                      Azure.Blob.SharedAccessSignature
+                      Azure.Blob.UserDelegationKey
+                      Azure.Blob.Utils
+    build-depends:    azure-auth
+                    , aeson
+                    , base64-bytestring
+                    , bytestring
+                    , cryptohash-sha256
                     , http-client-tls
+                    , http-media
+                    , http-types
                     , servant
                     , servant-client
+                    , servant-xml ^>= 1.0.3
+                    , xmlbf
                     , text
+                    , time
                     , unliftio
+                    , unordered-containers
+    hs-source-dirs:   src
     default-language: Haskell2010

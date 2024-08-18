@@ -6,8 +6,8 @@ import UnliftIO (MonadIO (..))
 
 import Azure.Types (ExpiresOn)
 
-import qualified Text.Read as Text
 import qualified Data.Text as Text
+import qualified Text.Read as Text
 
 {- | Check if an azure access token expiration time
 is past or < 20 seconds from current time
