@@ -13,6 +13,7 @@ module Azure.Blob
 
       -- ** Generating a Shared Access Signature URI
     , generateSas
+    , generateSasEither
 
       -- ** Types for dealing with Blob storage functions
     , AccountName (..)

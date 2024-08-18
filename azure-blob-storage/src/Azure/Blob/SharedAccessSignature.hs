@@ -3,6 +3,7 @@
 
 module Azure.Blob.SharedAccessSignature
     ( generateSas
+    , generateSasEither
     ) where
 
 import Azure.Auth (defaultAzureCredential)
@@ -27,14 +28,13 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Data.Time (UTCTime (..), addUTCTime, formatTime, getCurrentTime)
 import Data.Time.Format (defaultTimeLocale)
 import Network.HTTP.Types.URI (urlEncode)
-import UnliftIO (MonadIO (..))
+import UnliftIO (MonadIO (..), throwString)
 
 import qualified Azure.Types as Auth
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
 
--- TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
 generateSas ::
     MonadIO m =>
     AccountName ->
@@ -42,8 +42,25 @@ generateSas ::
     BlobName ->
     SasTokenExpiry ->
     Auth.Token ->
+    m Url
+generateSas accountName containerName blobName expiry tokenStore = do
+    eUrl <- liftIO $ generateSasEither accountName containerName blobName expiry tokenStore
+    case eUrl of
+        Left err ->
+            throwString $ show err
+        Right url ->
+            pure url
+
+-- TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
+generateSasEither ::
+    MonadIO m =>
+    AccountName ->
+    ContainerName ->
+    BlobName ->
+    SasTokenExpiry ->
+    Auth.Token ->
     m (Either Text Url)
-generateSas accountName containerName blobName (SasTokenExpiry expiry) tokenStore = do
+generateSasEither accountName containerName blobName (SasTokenExpiry expiry) tokenStore = do
     accessToken <- liftIO $ defaultAzureCredential Nothing blobStorageResourceUrl tokenStore
     now <- liftIO getCurrentTime
     let isoStartTime = formatToAzureTime now
