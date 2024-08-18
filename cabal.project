@@ -1,4 +1,5 @@
 packages:
   ./azure-auth
+  ./azure-email
   ./azure-key-vault
   ./azure-blob-storage

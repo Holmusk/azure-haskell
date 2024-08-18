@@ -1,0 +1,2 @@
+module Azure.Email
+    ( ) where
