@@ -8,6 +8,7 @@
 module Azure.Blob.DeleteBlob
     ( deleteBlobObject
     , deleteBlobObjectEither
+    , DeleteBlob (..)
     ) where
 
 import Azure.Auth (defaultAzureCredential)
@@ -23,6 +24,14 @@ import UnliftIO (MonadIO (..), throwString)
 
 import qualified Azure.Types as Auth
 import qualified Data.Text as Text
+
+data DeleteBlob = DeleteBlob
+    { accountName :: !AccountName
+    , containerName :: !ContainerName
+    , blobName :: !BlobName
+    , tokenStore :: !Auth.Token
+    }
+    deriving stock (Eq, Generic)
 
 deleteBlobObject ::
     MonadIO m =>
@@ -48,14 +57,6 @@ deleteBlobObjectEither getBlobReq = do
         case res of
             Right _ -> Right ()
             Left err -> Left err
-
-data DeleteBlob = DeleteBlob
-    { accountName :: !AccountName
-    , containerName :: !ContainerName
-    , blobName :: !BlobName
-    , tokenStore :: !Auth.Token
-    }
-    deriving stock (Eq, Generic)
 
 type DeleteBlobApi =
     Capture "container-name" ContainerName

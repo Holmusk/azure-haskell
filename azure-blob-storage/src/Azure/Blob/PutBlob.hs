@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -6,14 +7,16 @@
 module Azure.Blob.PutBlob
     ( putBlobObjectEither
     , putBlobObject
+    , PutBlob (..)
     ) where
 
 import Azure.Auth (defaultAzureCredential)
-import Azure.Blob.Types (BlobName (..), BlobType (..), ContainerName (..), PutBlob (..))
+import Azure.Blob.Types (AccountName (..), BlobName (..), BlobType (..), ContainerName (..))
 import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import Data.ByteString (ByteString)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
+import GHC.Generics (Generic)
 import Network.HTTP.Client.TLS (newTlsManager)
 import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
@@ -21,6 +24,19 @@ import UnliftIO (MonadIO (..), throwString)
 
 import qualified Azure.Types as Auth
 import qualified Data.Text as Text
+
+{- | Adds a blob to a container.
+
+You should have appropriate (Write) permissions in order to perform this operation.
+-}
+data PutBlob = PutBlob
+    { accountName :: !AccountName
+    , containerName :: !ContainerName
+    , blobName :: !BlobName
+    , tokenStore :: !Auth.Token
+    , body :: !ByteString -- TODO: Add chunked upload
+    }
+    deriving stock (Eq, Generic)
 
 {- | Upload a blob to a blob container.
 

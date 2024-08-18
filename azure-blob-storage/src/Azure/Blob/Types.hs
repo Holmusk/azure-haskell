@@ -4,7 +4,6 @@ module Azure.Blob.Types
     ( BlobName (..)
     , ContainerName (..)
     , AccountName (..)
-    , PutBlob (..)
     , BlobType (..)
     , UserDelegationRequest (..)
     , UserDelegationResponse (..)
@@ -17,15 +16,12 @@ module Azure.Blob.Types
     ) where
 
 import Data.Aeson (ToJSON (..), object, (.=))
-import Data.ByteString (ByteString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Servant.API (ToHttpApiData)
 import Xmlbf (FromXml (..), ToXml (..), element, pElement, pText, text)
 
 import qualified Data.HashMap.Strict as HashMap
-
-import qualified Azure.Types as Auth
 
 newtype AccountName = AccountName
     { unAccountName :: Text
@@ -50,19 +46,6 @@ data BlobType
     | PageBlob
     | AppendBlob
     deriving stock (Eq, Show, Generic)
-
-{- | Adds a blob to a container.
-
-You should have appropriate (Write) permissions in order to perform this operation.
--}
-data PutBlob = PutBlob
-    { accountName :: !AccountName
-    , containerName :: !ContainerName
-    , blobName :: !BlobName
-    , tokenStore :: !Auth.Token
-    , body :: !ByteString -- TODO: Add chunked upload
-    }
-    deriving stock (Eq, Generic)
 
 {- | The fields are supposed to be ISO format strings
 TODO: make these UTCTime formats

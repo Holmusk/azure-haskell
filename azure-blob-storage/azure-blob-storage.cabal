@@ -51,8 +51,7 @@ common common-options
 
 library
     import:           common-options
-    exposed-modules:  Azure.Blob
-                      Azure.Blob.DeleteBlob
+    exposed-modules:  Azure.Blob.DeleteBlob
                       Azure.Blob.GetBlob
                       Azure.Blob.PutBlob
                       Azure.Blob.Types

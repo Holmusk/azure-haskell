@@ -9,10 +9,12 @@
 module Azure.Blob.GetBlob
     ( getBlobObject
     , getBlobObjectEither
+    , GetBlob (..)
     ) where
 
 import Azure.Auth (defaultAzureCredential)
 import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
+import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import Data.ByteString (ByteString, fromStrict, toStrict)
 import Data.Data (Proxy (..))
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -24,17 +26,26 @@ import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwString)
 
-import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import qualified Azure.Types as Auth
+import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as Text
 import qualified Network.HTTP.Media as M
+
+data GetBlob = GetBlob
+    { accountName :: !AccountName
+    , containerName :: !ContainerName
+    , blobName :: !BlobName
+    , tokenStore :: !Auth.Token
+    }
+    deriving stock (Eq, Generic)
 
 getBlobObject ::
     MonadIO m =>
     GetBlob ->
-    m ByteString
-getBlobObject getBlobReq = do
-    res <- liftIO $ getBlobObjectEither getBlobReq
+    FilePath ->
+    m ()
+getBlobObject getBlobReq fp = do
+    res <- liftIO $ getBlobObjectEither getBlobReq fp
     case res of
         Left err ->
             throwString $ show err
@@ -44,23 +55,17 @@ getBlobObject getBlobReq = do
 getBlobObjectEither ::
     MonadIO m =>
     GetBlob ->
-    m (Either Text ByteString)
-getBlobObjectEither getBlobReq = do
+    FilePath ->
+    m (Either Text ())
+getBlobObjectEither getBlobReq fp = do
     res <-
         liftIO $
             callGetBlobClient getBlobObjectApi getBlobReq
-    pure $
-        case res of
-            Right r -> Right r
-            Left err -> Left err
-
-data GetBlob = GetBlob
-    { accountName :: !AccountName
-    , containerName :: !ContainerName
-    , blobName :: !BlobName
-    , tokenStore :: !Auth.Token
-    }
-    deriving stock (Eq, Generic)
+    case res of
+        Right bs -> do
+            liftIO $ LBS.writeFile fp (fromStrict bs)
+            pure $ Right ()
+        Left err -> pure $ Left err
 
 -- | Phantom type to encapsulate the data type in servant client types
 data Blob
@@ -82,6 +87,8 @@ instance Accept Blob where
             :| [ "application" M.// "octet-stream"
                , "text" M.// "csv"
                , "application" M.// "x-dbt"
+               , "image" M.// "jpeg"
+               , "image" M.// "png"
                ]
 
 instance MimeRender Blob ByteString where
