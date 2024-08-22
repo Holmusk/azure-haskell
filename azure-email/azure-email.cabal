@@ -52,6 +52,7 @@ library
     import:           common-options
     exposed-modules:  Azure.Email
     build-depends:    aeson
+                    , bytestring
                     , http-client
                     , servant
                     , servant-client

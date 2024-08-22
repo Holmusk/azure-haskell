@@ -55,6 +55,24 @@ instance ToJSON EmailContent where
             , "subject" .= ecSubject
             ]
 
+data EmailAttachment = EmailAttachment
+    { eaContentInBase64 :: !Text
+    -- ^ Base64 encoded contents of the attachment
+    , eaContentType :: !Text
+    -- ^ MIME type of the attachment
+    , eaName :: !Text
+    -- ^ Name of the attachment
+    }
+    deriving stock (Generic)
+
+instance ToJSON EmailAttachment where
+    toJSON EmailAttachment{..} =
+        object
+            [ "name" .= eaName
+            , "contentType" .= eaContentType
+            , "contentInBase64" .= eaContentInBase64
+            ]
+
 {- | Source:
 https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP
 -}
@@ -62,6 +80,9 @@ data AzureEmailRequest = AzureEmailRequest
     { aerContent :: !EmailContent
     , aerRecipients :: !EmailRecipients
     , aerSenderAddress :: !Text -- TODO: This should probably be it's own newtype
+    , aerReplyTo :: ![EmailAddress] -- TODO: Should this be NonEmpty instead?
+    , aerAttachments :: ![EmailAttachment]
+    , aerUserEngagementTrackingDisabled :: !Bool
     }
     deriving stock (Generic)
 
@@ -71,4 +92,18 @@ instance ToJSON AzureEmailRequest where
             [ "content" .= aerContent
             , "recipients" .= aerRecipients
             , "senderAddress" .= aerSenderAddress
+            , "replyTo" .= aerReplyTo
+            , "attachments" .= aerAttachments
+            , "userEngagementTrackingDisabled" .= aerUserEngagementTrackingDisabled
             ]
+
+{- | Possible states once a send email action is triggered.
+Source: https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP#emailsendstatus
+-}
+data EmailSendStatus
+    = Canceled
+    | Failed
+    | NotStarted
+    | Running
+    | Succeeded
+    deriving stock (Eq, Show, Generic, Enum, Bounded)
