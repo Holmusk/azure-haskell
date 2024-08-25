@@ -56,7 +56,6 @@ library
                     , base64-bytestring
                     , bytestring
                     , cryptohash-sha256
-                    , http-client
                     , http-client-tls
                     , servant
                     , servant-client

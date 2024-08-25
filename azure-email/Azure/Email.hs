@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Azure.Email where
+module Azure.Email (sendEmail, sendEmailEither) where
 
 import Azure.Types (AzureEmailRequest (..))
 import Crypto.Hash.SHA256 (hash, hmac)
@@ -19,6 +19,18 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
+
+sendEmail ::
+    MonadIO m =>
+    Text ->
+    m ()
+sendEmail apiSecret = undefined
+
+sendEmailEither ::
+    MonadIO m =>
+    Text ->
+    m (Either Text ())
+sendEmailEither apiSecret = undefined
 
 type SendEmailApi =
     "emails:send"
