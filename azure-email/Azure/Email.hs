@@ -1,109 +1,89 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 
-module Azure.Email () where
+module Azure.Email where
 
-import Data.Aeson (ToJSON (..), object, (.=))
+import Azure.Types (AzureEmailRequest (..))
+import Crypto.Hash.SHA256 (hash, hmac)
+import Data.Aeson (encode)
+import Data.Proxy (Proxy (..))
 import Data.Text (Text)
-import GHC.Generics (Generic)
+import Data.Text.Encoding (decodeUtf8)
+import Data.Time (UTCTime, defaultTimeLocale, formatTime, getCurrentTime)
+import Network.HTTP.Client.TLS (newTlsManager)
+import Servant.API
+import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
+import UnliftIO (MonadIO (..))
 
-data EmailAddress = EmailAddress
-    { eaEmail :: !Text
-    , eaDisplayName :: !Text
-    }
-    deriving stock (Eq, Show, Generic)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString.Char8 as C8
+import qualified Data.Text as Text
 
-instance ToJSON EmailAddress where
-    toJSON EmailAddress{..} =
-        object
-            [ "address" .= eaEmail
-            , "displayName" .= eaDisplayName
-            ]
+type SendEmailApi =
+    "emails:send"
+        :> QueryParam' '[Required, Strict] "api-version" Text
+        :> Header' '[Required, Strict] "x-ms-date" Text
+        :> Header' '[Required, Strict] "Host" Text
+        :> Header' '[Required, Strict] "x-ms-content-sha256" Text
+        :> Header' '[Required, Strict] "Authorization" Text
+        :> ReqBody '[JSON] AzureEmailRequest
+        :> PostNoContent
 
--- | Fields to represent @cc@, @bcc@ and @to@ in an email
-data EmailRecipients = EmailRecipients
-    { ccRecipients :: ![EmailAddress]
-    , bccRecipients :: ![EmailAddress]
-    , toRecipients :: ![EmailAddress]
-    }
-    deriving stock (Generic)
+sendEmailApi :: Text -> Text -> Text -> Text -> Text -> AzureEmailRequest -> ClientM NoContent
+sendEmailApi = client (Proxy @SendEmailApi)
 
-instance ToJSON EmailRecipients where
-    toJSON EmailRecipients{..} =
-        object
-            [ "to" .= toRecipients
-            , "cc" .= ccRecipients
-            , "bcc" .= bccRecipients
-            ]
+callSendEmailClient ::
+    (Text -> Text -> Text -> Text -> Text -> AzureEmailRequest -> ClientM NoContent) ->
+    AzureEmailRequest ->
+    Text ->
+    Text ->
+    IO (Either Text ())
+callSendEmailClient action req azureEmailHost secret = do
+    manager <- liftIO newTlsManager
+    (formatToAzureTime -> now) <- getCurrentTime
+    encodedPayload <- encodePayload
+    let stringToSign =
+            "POST\n"
+                <> "/emails:send?api-version="
+                <> apiVersion
+                <> "\n"
+                <> now
+                <> ";"
+                <> azureEmailHost
+                <> ";"
+                <> encodedPayload
+    let sign = buildSignature stringToSign secret
+    res <-
+        liftIO $
+            runClientM
+                (action apiVersion now azureEmailHost encodedPayload ("HMAC-SHA256 SignedHeaders=x-ms-date;host;x-ms-content-sha256&Signature=" <> sign) req)
+                (mkClientEnv manager $ BaseUrl Https (Text.unpack azureEmailHost) 443 "")
+    pure $ case res of
+        Left err -> do
+            Left . Text.pack $ show err
+        Right _ -> do
+            Right ()
+  where
+    apiVersion :: Text
+    apiVersion = "2023-03-31"
 
--- | Azure email requires both HTML and plain text format email content
-data EmailContent = EmailContent
-    { ecHtml :: !Text
-    -- ^ Html version of the email message.
-    , ecPlainText :: !Text
-    -- ^ Plain text version of the email message.
-    , ecSubject :: !Text
-    -- ^ Subject of the email message.
-    }
-    deriving stock (Eq, Show, Generic)
+    encodePayload :: IO Text
+    encodePayload = do
+        let contentBytes = encode req
+            hashedBytes = hash (BS.toStrict contentBytes)
+            encodedHash = B64.encode hashedBytes
+        pure $ decodeUtf8 encodedHash
 
-instance ToJSON EmailContent where
-    toJSON EmailContent{..} =
-        object
-            [ "plainText" .= ecPlainText
-            , "html" .= ecHtml
-            , "subject" .= ecSubject
-            ]
+    -- TODO: formatToAzureTime and buildSignature are borrowed from azure-blob-storage.
+    -- We should not be duplicating these utility functions
+    formatToAzureTime :: UTCTime -> Text
+    formatToAzureTime time = Text.pack $ formatTime defaultTimeLocale "%FT%TZ" time
 
-data EmailAttachment = EmailAttachment
-    { eaContentInBase64 :: !Text
-    -- ^ Base64 encoded contents of the attachment
-    , eaContentType :: !Text
-    -- ^ MIME type of the attachment
-    , eaName :: !Text
-    -- ^ Name of the attachment
-    }
-    deriving stock (Generic)
-
-instance ToJSON EmailAttachment where
-    toJSON EmailAttachment{..} =
-        object
-            [ "name" .= eaName
-            , "contentType" .= eaContentType
-            , "contentInBase64" .= eaContentInBase64
-            ]
-
-{- | Source:
-https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP
--}
-data AzureEmailRequest = AzureEmailRequest
-    { aerContent :: !EmailContent
-    , aerRecipients :: !EmailRecipients
-    , aerSenderAddress :: !Text -- TODO: This should probably be it's own newtype
-    , aerReplyTo :: ![EmailAddress] -- TODO: Should this be NonEmpty instead?
-    , aerAttachments :: ![EmailAttachment]
-    , aerUserEngagementTrackingDisabled :: !Bool
-    }
-    deriving stock (Generic)
-
-instance ToJSON AzureEmailRequest where
-    toJSON AzureEmailRequest{..} =
-        object
-            [ "content" .= aerContent
-            , "recipients" .= aerRecipients
-            , "senderAddress" .= aerSenderAddress
-            , "replyTo" .= aerReplyTo
-            , "attachments" .= aerAttachments
-            , "userEngagementTrackingDisabled" .= aerUserEngagementTrackingDisabled
-            ]
-
-{- | Possible states once a send email action is triggered.
-Source: https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP#emailsendstatus
--}
-data EmailSendStatus
-    = Canceled
-    | Failed
-    | NotStarted
-    | Running
-    | Succeeded
-    deriving stock (Eq, Show, Generic, Enum, Bounded)
+    buildSignature :: Text -> Text -> Text
+    buildSignature stringToSign sec =
+        let decodedSecret = B64.decodeLenient (C8.pack (Text.unpack sec))
+            encodedStringToSign = C8.pack (Text.unpack stringToSign)
+            hashedBytes = hmac decodedSecret encodedStringToSign
+            encodedSignature = B64.encode hashedBytes
+         in decodeUtf8 encodedSignature

@@ -51,11 +51,16 @@ common common-options
 library
     import:           common-options
     exposed-modules:  Azure.Email
+                      Azure.Types
     build-depends:    aeson
+                    , base64-bytestring
                     , bytestring
+                    , cryptohash-sha256
                     , http-client
+                    , http-client-tls
                     , servant
                     , servant-client
+                    , time
                     , text
                     , unliftio
     default-language: Haskell2010
