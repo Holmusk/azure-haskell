@@ -7,7 +7,7 @@ operations. This is very much incomplete but serves as a boilerplate to get
 started. Covered areas:
 - Authentication (with managed identities only as of now)
 - Key Vault
-- Blob storage (To be pushed)
+- Blob storage
 - Email communication service (To be pushed)
 
 ## Building the project
