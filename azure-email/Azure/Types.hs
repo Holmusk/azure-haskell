@@ -1,18 +1,34 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 
-module Azure.Types (AzureEmailRequest (..), AzureEmailResponse (..)) where
+module Azure.Types
+    ( AzureEmailRequest (..)
+    , AzureEmailResponse (..)
+
+      -- * Types to work with email addresses.
+
+    -- These types merely represent the address and
+    -- are not responsible for validating them whatsoever.
+    , EmailAddress (..)
+    , EmailRecipients (..)
+    , EmailContent (..)
+    , EmailAttachment (..)
+    ) where
 
 import Data.Aeson (FromJSON (..), ToJSON (..), object, withObject, withText, (.:), (.=))
 import Data.Aeson.Types (parseFail)
 import Data.Text (Text)
-import GHC.Generics (Generic)
 
+{- | Each email is represented as an object with @displayName@
+and an associated @address@.
+
+Source: https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP#emailaddress
+-}
 data EmailAddress = EmailAddress
     { eaEmail :: !Text
     , eaDisplayName :: !Text
     }
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show)
 
 instance ToJSON EmailAddress where
     toJSON EmailAddress{..} =
@@ -27,7 +43,7 @@ data EmailRecipients = EmailRecipients
     , bccRecipients :: ![EmailAddress]
     , toRecipients :: ![EmailAddress]
     }
-    deriving stock (Generic)
+    deriving stock (Show)
 
 instance ToJSON EmailRecipients where
     toJSON EmailRecipients{..} =
@@ -46,7 +62,7 @@ data EmailContent = EmailContent
     , ecSubject :: !Text
     -- ^ Subject of the email message.
     }
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show)
 
 instance ToJSON EmailContent where
     toJSON EmailContent{..} =
@@ -64,7 +80,7 @@ data EmailAttachment = EmailAttachment
     , eaName :: !Text
     -- ^ Name of the attachment
     }
-    deriving stock (Generic)
+    deriving stock (Show)
 
 instance ToJSON EmailAttachment where
     toJSON EmailAttachment{..} =
@@ -74,8 +90,9 @@ instance ToJSON EmailAttachment where
             , "contentInBase64" .= eaContentInBase64
             ]
 
-{- | Source:
-https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP
+{- | Represents the payload for sending an email message.
+
+Source: https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP#emailmessage
 -}
 data AzureEmailRequest = AzureEmailRequest
     { aerContent :: !EmailContent
@@ -85,7 +102,7 @@ data AzureEmailRequest = AzureEmailRequest
     , aerAttachments :: ![EmailAttachment]
     , aerUserEngagementTrackingDisabled :: !Bool
     }
-    deriving stock (Generic)
+    deriving stock (Show)
 
 instance ToJSON AzureEmailRequest where
     toJSON AzureEmailRequest{..} =
@@ -107,7 +124,7 @@ data EmailSendStatus
     | NotStarted
     | Running
     | Succeeded
-    deriving stock (Eq, Show, Generic, Enum, Bounded)
+    deriving stock (Eq, Show, Enum, Bounded)
 
 instance FromJSON EmailSendStatus where
     parseJSON = withText "EmailSendStatus" $ \case
@@ -122,7 +139,7 @@ data AzureEmailResponse = AzureEmailResponse
     { aerId :: !Text
     , aerStatus :: !EmailSendStatus
     }
-    deriving stock (Eq, Show, Generic)
+    deriving stock (Eq, Show)
 
 instance FromJSON AzureEmailResponse where
     parseJSON = withObject "AzureEmailResponse" $ \o -> do
