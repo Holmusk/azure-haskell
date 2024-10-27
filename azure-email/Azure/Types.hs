@@ -13,11 +13,16 @@ module Azure.Types
     , EmailRecipients (..)
     , EmailContent (..)
     , EmailAttachment (..)
+
+      -- * Smart constructors
+    , newAzureEmailRequest
     ) where
 
 import Data.Aeson (FromJSON (..), ToJSON (..), object, withObject, withText, (.:), (.=))
 import Data.Aeson.Types (parseFail)
 import Data.Text (Text)
+
+import qualified Data.Text as Text
 
 {- | Each email is represented as an object with @displayName@
 and an associated @address@.
@@ -36,6 +41,14 @@ instance ToJSON EmailAddress where
             [ "address" .= eaEmail
             , "displayName" .= eaDisplayName
             ]
+
+{- | Why text type instead of represting it as @EmailAddress@?
+
+Well, Azure API dictates that sender address should only be the email
+instead of a combination of email and display name (EmailAddress in our case).
+Therefore, we fallback to use text as a type alias for this one case.
+-}
+type SenderEmailAddress = Text
 
 -- | Fields to represent @cc@, @bcc@ and @to@ in an email
 data EmailRecipients = EmailRecipients
@@ -97,7 +110,7 @@ Source: https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email
 data AzureEmailRequest = AzureEmailRequest
     { aerContent :: !EmailContent
     , aerRecipients :: !EmailRecipients
-    , aerSenderAddress :: !Text -- TODO: This should probably be it's own newtype
+    , aerSenderAddress :: !SenderEmailAddress
     , aerReplyTo :: ![EmailAddress] -- TODO: Should this be NonEmpty instead?
     , aerAttachments :: ![EmailAttachment]
     , aerUserEngagementTrackingDisabled :: !Bool
@@ -114,6 +127,24 @@ instance ToJSON AzureEmailRequest where
             , "attachments" .= aerAttachments
             , "userEngagementTrackingDisabled" .= aerUserEngagementTrackingDisabled
             ]
+
+{- | Smart constructor to build a send email request.
+
+There are few default settings that the caller needs to be aware of:
+1. @replyTo@ for recipient is the sender's email address. In case there needs to be multiple
+   email addresses in @replyTo@ field, it is advised to build a custom request based on the
+   exposed data types instead.
+2. Attachements are not included, yet.
+3. Enagagement tracking is disabled.
+-}
+newAzureEmailRequest ::
+    SenderEmailAddress ->
+    EmailRecipients ->
+    EmailContent ->
+    AzureEmailRequest
+newAzureEmailRequest senderAddress recipients content =
+    let senderEmailAddress = EmailAddress senderAddress Text.empty
+     in AzureEmailRequest content recipients senderAddress [senderEmailAddress] [] True
 
 {- | Possible states once a send email action is triggered.
 Source: https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP#emailsendstatus

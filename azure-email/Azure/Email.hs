@@ -16,26 +16,39 @@ import Data.Time (UTCTime, defaultTimeLocale, formatTime, getCurrentTime)
 import Network.HTTP.Client.TLS (newTlsManager)
 import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
-import UnliftIO (MonadIO (..))
+import UnliftIO (MonadIO (..), throwString)
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
 
+{- | Send an email provided a request payload
+
+Errors are thrown in IO. For a variant where error is captured
+in an @Left@ branch, see @sendEmailEither@
+-}
 sendEmail ::
     MonadIO m =>
     Text ->
+    Text ->
     AzureEmailRequest ->
     m AzureEmailResponse
-sendEmail apiSecret payload = undefined
+sendEmail apiSecret emailHost payload = do
+    resp <- sendEmailEither apiSecret emailHost payload
+    case resp of
+        Left err -> throwString $ show err
+        Right r -> pure r
 
+-- | Send an email provided a request payload
 sendEmailEither ::
     MonadIO m =>
     Text ->
+    Text ->
     AzureEmailRequest ->
     m (Either Text AzureEmailResponse)
-sendEmailEither apiSecret payload = undefined
+sendEmailEither apiSecret emailHost payload =
+    liftIO $ callSendEmailClient sendEmailApi payload emailHost apiSecret
 
 type SendEmailApi =
     "emails:send"
@@ -45,17 +58,17 @@ type SendEmailApi =
         :> Header' '[Required, Strict] "x-ms-content-sha256" Text
         :> Header' '[Required, Strict] "Authorization" Text
         :> ReqBody '[JSON] AzureEmailRequest
-        :> PostNoContent
+        :> Post '[JSON] AzureEmailResponse
 
-sendEmailApi :: Text -> Text -> Text -> Text -> Text -> AzureEmailRequest -> ClientM NoContent
+sendEmailApi :: Text -> Text -> Text -> Text -> Text -> AzureEmailRequest -> ClientM AzureEmailResponse
 sendEmailApi = client (Proxy @SendEmailApi)
 
 callSendEmailClient ::
-    (Text -> Text -> Text -> Text -> Text -> AzureEmailRequest -> ClientM NoContent) ->
+    (Text -> Text -> Text -> Text -> Text -> AzureEmailRequest -> ClientM AzureEmailResponse) ->
     AzureEmailRequest ->
     Text ->
     Text ->
-    IO (Either Text ())
+    IO (Either Text AzureEmailResponse)
 callSendEmailClient action req azureEmailHost secret = do
     manager <- liftIO newTlsManager
     (formatToAzureTime -> now) <- getCurrentTime
@@ -79,8 +92,8 @@ callSendEmailClient action req azureEmailHost secret = do
     pure $ case res of
         Left err -> do
             Left . Text.pack $ show err
-        Right _ -> do
-            Right ()
+        Right r -> do
+            Right r
   where
     apiVersion :: Text
     apiVersion = "2023-03-31"
