@@ -52,7 +52,8 @@ common common-options
 
 library
     import:           common-options
-    exposed-modules:  Azure.Secret
+    exposed-modules:  Azure.Secret.Types
+                      Azure.Secret
     build-depends:    aeson
                     , azure-auth
                     , http-client-tls
