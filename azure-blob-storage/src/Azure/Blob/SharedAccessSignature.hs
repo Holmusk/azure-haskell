@@ -34,12 +34,22 @@ import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
 
+{- | Generates a Shared Access Token.
+
+Errors will be thrown in IO. For variant where error is
+caught in a @Left@ branch, see @generateSasEither@
+-}
 generateSas ::
     MonadIO m =>
+    -- | Name of the Blob storage account
     AccountName ->
+    -- | Name of the Blob container
     ContainerName ->
+    -- | Name of the blob itself
     BlobName ->
+    -- | Time in seconds for which the Shared Access Token should be valid for
     SasTokenExpiry ->
+    -- | Access Token for making requests
     AccessToken ->
     m Url
 generateSas accountName containerName blobName expiry accessToken = do
@@ -50,13 +60,21 @@ generateSas accountName containerName blobName expiry accessToken = do
         Right url ->
             pure url
 
--- TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
+{- | Generates a Shared Access Token.
+
+TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
+-}
 generateSasEither ::
     MonadIO m =>
+    -- | Name of the Blob storage account
     AccountName ->
+    -- | Name of the Blob container
     ContainerName ->
+    -- | Name of the blob itself
     BlobName ->
+    -- | Time in seconds for which the Shared Access Token should be valid for
     SasTokenExpiry ->
+    -- | Access Token for making requests
     AccessToken ->
     m (Either Text Url)
 generateSasEither accountName containerName blobName (SasTokenExpiry expiry) accessToken = do

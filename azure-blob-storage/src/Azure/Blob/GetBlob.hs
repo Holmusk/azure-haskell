@@ -39,6 +39,11 @@ data GetBlob = GetBlob
     }
     deriving stock (Eq, Generic)
 
+{- | Fetch a blob from blob storage
+
+Errors will be thrown in IO. For variant where error is
+caught in a @Left@ branch, see @getBlobObjectEither@
+-}
 getBlobObject ::
     MonadIO m =>
     GetBlob ->
@@ -52,6 +57,7 @@ getBlobObject getBlobReq fp = do
         Right r ->
             pure r
 
+-- | Fetch a blob from blob storage
 getBlobObjectEither ::
     MonadIO m =>
     GetBlob ->

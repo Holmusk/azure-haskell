@@ -108,7 +108,7 @@ newtype Url = Url
     }
     deriving stock (Eq, Show, Generic)
 
--- | For an azure action to be turned into a signed url
+-- | Represents how long a SAS token should be valid for in seconds.
 newtype SasTokenExpiry = SasTokenExpiry
     { unSasTokenExpiry :: Int
     }
