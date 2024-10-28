@@ -2,10 +2,10 @@
 
 module Main where
 
+import Azure.Auth (defaultAzureCredential)
 import Azure.Secret (getSecret)
 import Azure.Secret.Types (KeyVaultHost (..), SecretName (..))
 import Azure.Types (newEmptyToken)
-import Azure.Auth (defaultAzureCredential)
 
 main :: IO ()
 main = do

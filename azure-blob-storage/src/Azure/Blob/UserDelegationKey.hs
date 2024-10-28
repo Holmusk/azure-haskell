@@ -9,12 +9,6 @@ module Azure.Blob.UserDelegationKey
     , getUserDelegationKeyApi
     ) where
 
-import Azure.Blob.Types
-    ( AccountName (..)
-    , UserDelegationRequest (..)
-    , UserDelegationResponse (..)
-    )
-import Azure.Blob.Utils (mkBlobHostUrl)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
 import Network.HTTP.Client.TLS (newTlsManager)
@@ -23,7 +17,14 @@ import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, 
 import Servant.XML (XML)
 import UnliftIO (MonadIO (..))
 
-import qualified Azure.Types as Auth
+import Azure.Blob.Types
+    ( AccountName (..)
+    , UserDelegationRequest (..)
+    , UserDelegationResponse (..)
+    )
+import Azure.Blob.Utils (mkBlobHostUrl)
+import Azure.Types (AccessToken (..))
+
 import qualified Data.Text as Text
 
 -- These type aliases always hold static values.
@@ -49,10 +50,10 @@ getUserDelegationKeyApi = client (Proxy @GetUserDelegationKeyApi)
 callGetUserDelegationKeyApi ::
     (Restype -> Comp -> Text -> Text -> UserDelegationRequest -> ClientM UserDelegationResponse) ->
     AccountName ->
-    Auth.AccessToken ->
+    AccessToken ->
     UserDelegationRequest ->
     IO (Either Text UserDelegationResponse)
-callGetUserDelegationKeyApi action accountName Auth.AccessToken{atAccessToken} req = do
+callGetUserDelegationKeyApi action accountName AccessToken{atAccessToken} req = do
     manager <- liftIO newTlsManager
     res <-
         liftIO $

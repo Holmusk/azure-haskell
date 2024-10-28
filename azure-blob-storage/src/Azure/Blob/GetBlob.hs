@@ -12,9 +12,6 @@ module Azure.Blob.GetBlob
     , GetBlob (..)
     ) where
 
-import Azure.Auth (defaultAzureCredential)
-import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
-import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import Data.ByteString (ByteString, fromStrict, toStrict)
 import Data.Data (Proxy (..))
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -26,7 +23,10 @@ import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwString)
 
-import qualified Azure.Types as Auth
+import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
+import Azure.Blob.Utils (mkBlobHostUrl)
+import Azure.Types (AccessToken (..))
+
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as Text
 import qualified Network.HTTP.Media as M
@@ -35,7 +35,7 @@ data GetBlob = GetBlob
     { accountName :: !AccountName
     , containerName :: !ContainerName
     , blobName :: !BlobName
-    , tokenStore :: !Auth.Token
+    , accessToken :: !AccessToken
     }
     deriving stock (Eq, Generic)
 
@@ -104,13 +104,12 @@ callGetBlobClient ::
     (ContainerName -> BlobName -> Text -> Text -> ClientM ByteString) ->
     GetBlob ->
     IO (Either Text ByteString)
-callGetBlobClient action GetBlob{accountName, containerName, blobName, tokenStore} = do
-    Auth.AccessToken{atAccessToken} <- liftIO $ defaultAzureCredential Nothing blobStorageResourceUrl tokenStore
+callGetBlobClient action GetBlob{accountName, containerName, blobName, accessToken} = do
     manager <- liftIO newTlsManager
     res <-
         liftIO $
             runClientM
-                (action containerName blobName ("Bearer " <> atAccessToken) "2020-04-08")
+                (action containerName blobName ("Bearer " <> atAccessToken accessToken) "2020-04-08")
                 (mkClientEnv manager $ BaseUrl Https (mkBlobHostUrl accountName) 443 "")
     pure $ case res of
         Left err -> do

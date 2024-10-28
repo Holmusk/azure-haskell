@@ -13,6 +13,7 @@ module Azure.Blob.Types
     , sasPermissionsToText
     , SasResource (..)
     , sasResourceToText
+    , blobTypeToText
     ) where
 
 import Data.Aeson (ToJSON (..), object, (.=))
@@ -46,6 +47,13 @@ data BlobType
     | PageBlob
     | AppendBlob
     deriving stock (Eq, Show, Generic)
+
+blobTypeToText :: BlobType -> Text
+blobTypeToText = \case
+    BlockBlob -> "BlockBlob"
+    PageBlob -> "PageBlob"
+    AppendBlob -> "AppendBlob"
+{-# INLINE blobTypeToText #-}
 
 {- | The fields are supposed to be ISO format strings
 TODO: make these UTCTime formats
