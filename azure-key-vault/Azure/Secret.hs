@@ -1,37 +1,58 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Azure.Secret
-    ( KeyVaultResponse (..)
-    , GetSecretFromVaultApi
-    , getSecretFromVault
-    , callKeyVaultClient
+    ( getSecret
+    , getSecretEither
     ) where
 
-import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Data (Proxy (..))
 import Data.Text (Text)
-import GHC.Generics (Generic)
 import Network.HTTP.Client.TLS (newTlsManager)
 import Servant.API (Capture, Get, Header', JSON, QueryParam', Required, Strict, (:>))
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
-import UnliftIO (MonadIO (..), throwIO)
+import UnliftIO (MonadIO (..), throwString)
 
-import Azure.Auth (defaultAzureCredential)
-import Azure.Types (AccessToken (..), Token)
+import Azure.Secret.Types (KeyVaultHost (..), KeyVaultResponse (..), SecretName (..))
+import Azure.Types (AccessToken (..))
 
 import qualified Data.Text as Text
 
-newtype KeyVaultResponse = KeyVaultResponse
-    { unKeyValueReponse :: Text
-    }
-    deriving stock (Eq, Show, Generic)
+{- | Fetches a secret from Key vault.
 
-instance FromJSON KeyVaultResponse where
-    parseJSON = withObject "KeyVaultResponse" $ \o -> do
-        unKeyValueReponse <- o .: "value"
-        pure KeyVaultResponse{..}
+All errors are thrown in IO. For variant where error is
+caught in a @Left@ branch, see @getSecretEither@
+-}
+getSecret ::
+    MonadIO m =>
+    -- | Name of the secret
+    SecretName ->
+    -- | Host to identify the key vault. This is where all the request will be
+    -- made. It is of the form @{keyvault-name}.vault.azure.net@
+    KeyVaultHost ->
+    -- | Access token which will form part of the authentication header
+    AccessToken ->
+    m KeyVaultResponse
+getSecret secretName host accessToken = do
+    res <- getSecretEither secretName host accessToken
+    case res of
+        Left err -> throwString $ show err
+        Right value -> pure value
+
+{- | Fetches a secret from key vault provided the name of the secret and the key vault host.
+These secrets can be found under @/secrets@ path under key vault section in Azure portal.
+-}
+getSecretEither ::
+    MonadIO m =>
+    -- | Name of the secret
+    SecretName ->
+    -- | Host to identify the key vault. This is where all the request will be
+    -- made. It is of the form @{keyvault-name}.vault.azure.net@
+    KeyVaultHost ->
+    -- | Access token which will form part of the authentication header
+    AccessToken ->
+    m (Either Text KeyVaultResponse)
+getSecretEither = callKeyVaultClient getSecretFromVault
 
 {-
 Path: GET {vaultBaseUrl}/secrets/{secret-name}/{secret-version}?api-version=7.4
@@ -52,20 +73,19 @@ getSecretFromVault = client (Proxy @GetSecretFromVaultApi)
 callKeyVaultClient ::
     MonadIO m =>
     (Text -> Float -> Text -> ClientM KeyVaultResponse) ->
-    Text ->
-    Text ->
-    Token ->
-    m KeyVaultResponse
-callKeyVaultClient action secretName vaultHost tokenStore = do
+    SecretName ->
+    KeyVaultHost ->
+    AccessToken ->
+    m (Either Text KeyVaultResponse)
+callKeyVaultClient action (SecretName secretName) (KeyVaultHost vaultHost) accessToken = do
     manager <- liftIO newTlsManager
-    authHeader <- defaultAzureCredential Nothing vaultHost tokenStore
     res <-
         liftIO $
             runClientM
-                (action secretName 7.4 ("Bearer " <> atAccessToken authHeader))
+                (action secretName 7.4 ("Bearer " <> atAccessToken accessToken))
                 (mkClientEnv manager $ BaseUrl Https (Text.unpack vaultHost) 443 "")
-    case res of
+    pure $ case res of
         Left err ->
-            throwIO err
+            Left . Text.pack $ show err
         Right response ->
-            pure response
+            Right response
