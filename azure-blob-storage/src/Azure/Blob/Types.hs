@@ -13,6 +13,7 @@ module Azure.Blob.Types
     , sasPermissionsToText
     , SasResource (..)
     , sasResourceToText
+    , blobTypeToText
     ) where
 
 import Data.Aeson (ToJSON (..), object, (.=))
@@ -46,6 +47,13 @@ data BlobType
     | PageBlob
     | AppendBlob
     deriving stock (Eq, Show, Generic)
+
+blobTypeToText :: BlobType -> Text
+blobTypeToText = \case
+    BlockBlob -> "BlockBlob"
+    PageBlob -> "PageBlob"
+    AppendBlob -> "AppendBlob"
+{-# INLINE blobTypeToText #-}
 
 {- | The fields are supposed to be ISO format strings
 TODO: make these UTCTime formats
@@ -100,7 +108,7 @@ newtype Url = Url
     }
     deriving stock (Eq, Show, Generic)
 
--- | For an azure action to be turned into a signed url
+-- | Represents how long a SAS token should be valid for in seconds.
 newtype SasTokenExpiry = SasTokenExpiry
     { unSasTokenExpiry :: Int
     }

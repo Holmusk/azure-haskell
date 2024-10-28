@@ -10,9 +10,6 @@ module Azure.Blob.PutBlob
     , PutBlob (..)
     ) where
 
-import Azure.Auth (defaultAzureCredential)
-import Azure.Blob.Types (AccountName (..), BlobName (..), BlobType (..), ContainerName (..))
-import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import Data.ByteString (ByteString)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
@@ -22,7 +19,10 @@ import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwString)
 
-import qualified Azure.Types as Auth
+import Azure.Blob.Types (AccountName (..), BlobName (..), BlobType (..), ContainerName (..), blobTypeToText)
+import Azure.Blob.Utils (mkBlobHostUrl)
+import Azure.Types (AccessToken (..))
+
 import qualified Data.Text as Text
 
 {- | Adds a blob to a container.
@@ -33,7 +33,7 @@ data PutBlob = PutBlob
     { accountName :: !AccountName
     , containerName :: !ContainerName
     , blobName :: !BlobName
-    , tokenStore :: !Auth.Token
+    , accessToken :: !AccessToken
     , body :: !ByteString -- TODO: Add chunked upload
     }
     deriving stock (Eq, Generic)
@@ -86,13 +86,12 @@ callPutBlobClient ::
     (ContainerName -> BlobName -> Text -> Text -> Text -> ByteString -> ClientM NoContent) ->
     PutBlob ->
     IO (Either Text ())
-callPutBlobClient action PutBlob{accountName, containerName, blobName, tokenStore, body} = do
-    Auth.AccessToken{atAccessToken} <- liftIO $ defaultAzureCredential Nothing blobStorageResourceUrl tokenStore
+callPutBlobClient action PutBlob{..} = do
     manager <- liftIO newTlsManager
     res <-
         liftIO $
             runClientM
-                (action containerName blobName ("Bearer " <> atAccessToken) "2020-04-08" (Text.pack $ show BlockBlob) body)
+                (action containerName blobName ("Bearer " <> atAccessToken accessToken) "2020-04-08" (blobTypeToText BlockBlob) body)
                 (mkClientEnv manager $ BaseUrl Https (mkBlobHostUrl accountName) 443 "")
     pure $ case res of
         Left err ->

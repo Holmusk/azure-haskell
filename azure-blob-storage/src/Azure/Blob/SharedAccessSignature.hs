@@ -6,7 +6,14 @@ module Azure.Blob.SharedAccessSignature
     , generateSasEither
     ) where
 
-import Azure.Auth (defaultAzureCredential)
+import Crypto.Hash.SHA256 (hmac)
+import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import Data.Time (UTCTime (..), addUTCTime, formatTime, getCurrentTime)
+import Data.Time.Format (defaultTimeLocale)
+import Network.HTTP.Types.URI (urlEncode)
+import UnliftIO (MonadIO (..), throwString)
+
 import Azure.Blob.Types
     ( AccountName (..)
     , BlobName (..)
@@ -21,47 +28,56 @@ import Azure.Blob.Types
     , sasResourceToText
     )
 import Azure.Blob.UserDelegationKey (callGetUserDelegationKeyApi, getUserDelegationKeyApi)
-import Azure.Blob.Utils (blobStorageResourceUrl)
-import Crypto.Hash.SHA256 (hmac)
-import Data.Text (Text)
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Data.Time (UTCTime (..), addUTCTime, formatTime, getCurrentTime)
-import Data.Time.Format (defaultTimeLocale)
-import Network.HTTP.Types.URI (urlEncode)
-import UnliftIO (MonadIO (..), throwString)
+import Azure.Types (AccessToken (..))
 
-import qualified Azure.Types as Auth
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
 
+{- | Generates a Shared Access Token.
+
+Errors will be thrown in IO. For variant where error is
+caught in a @Left@ branch, see @generateSasEither@
+-}
 generateSas ::
     MonadIO m =>
+    -- | Name of the Blob storage account
     AccountName ->
+    -- | Name of the Blob container
     ContainerName ->
+    -- | Name of the blob itself
     BlobName ->
+    -- | Time in seconds for which the Shared Access Token should be valid for
     SasTokenExpiry ->
-    Auth.Token ->
+    -- | Access Token for making requests
+    AccessToken ->
     m Url
-generateSas accountName containerName blobName expiry tokenStore = do
-    eUrl <- liftIO $ generateSasEither accountName containerName blobName expiry tokenStore
+generateSas accountName containerName blobName expiry accessToken = do
+    eUrl <- liftIO $ generateSasEither accountName containerName blobName expiry accessToken
     case eUrl of
         Left err ->
             throwString $ show err
         Right url ->
             pure url
 
--- TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
+{- | Generates a Shared Access Token.
+
+TODO: We need to add support for empty fields here. Eg: signedAuthorizedUserObjectId
+-}
 generateSasEither ::
     MonadIO m =>
+    -- | Name of the Blob storage account
     AccountName ->
+    -- | Name of the Blob container
     ContainerName ->
+    -- | Name of the blob itself
     BlobName ->
+    -- | Time in seconds for which the Shared Access Token should be valid for
     SasTokenExpiry ->
-    Auth.Token ->
+    -- | Access Token for making requests
+    AccessToken ->
     m (Either Text Url)
-generateSasEither accountName containerName blobName (SasTokenExpiry expiry) tokenStore = do
-    accessToken <- liftIO $ defaultAzureCredential Nothing blobStorageResourceUrl tokenStore
+generateSasEither accountName containerName blobName (SasTokenExpiry expiry) accessToken = do
     now <- liftIO getCurrentTime
     let isoStartTime = formatToAzureTime now
         isoExpiryTime = formatToAzureTime (addUTCTime (fromIntegral expiry) now)

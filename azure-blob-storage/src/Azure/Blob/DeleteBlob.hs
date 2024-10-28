@@ -11,9 +11,6 @@ module Azure.Blob.DeleteBlob
     , DeleteBlob (..)
     ) where
 
-import Azure.Auth (defaultAzureCredential)
-import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
-import Azure.Blob.Utils (blobStorageResourceUrl, mkBlobHostUrl)
 import Data.Data (Proxy (..))
 import Data.Text (Text)
 import GHC.Generics (Generic)
@@ -22,14 +19,17 @@ import Servant.API
 import Servant.Client (BaseUrl (..), ClientM, Scheme (..), client, mkClientEnv, runClientM)
 import UnliftIO (MonadIO (..), throwString)
 
-import qualified Azure.Types as Auth
+import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
+import Azure.Blob.Utils (mkBlobHostUrl)
+import Azure.Types (AccessToken (..))
+
 import qualified Data.Text as Text
 
 data DeleteBlob = DeleteBlob
     { accountName :: !AccountName
     , containerName :: !ContainerName
     , blobName :: !BlobName
-    , tokenStore :: !Auth.Token
+    , accessToken :: !AccessToken
     }
     deriving stock (Eq, Generic)
 
@@ -72,13 +72,12 @@ callDeleteBlobClient ::
     (ContainerName -> BlobName -> Text -> Text -> ClientM NoContent) ->
     DeleteBlob ->
     IO (Either Text ())
-callDeleteBlobClient action DeleteBlob{accountName, containerName, blobName, tokenStore} = do
-    Auth.AccessToken{atAccessToken} <- liftIO $ defaultAzureCredential Nothing blobStorageResourceUrl tokenStore
+callDeleteBlobClient action DeleteBlob{accountName, containerName, blobName, accessToken} = do
     manager <- liftIO newTlsManager
     res <-
         liftIO $
             runClientM
-                (action containerName blobName ("Bearer " <> atAccessToken) "2020-04-08")
+                (action containerName blobName ("Bearer " <> atAccessToken accessToken) "2020-04-08")
                 (mkClientEnv manager $ BaseUrl Https (mkBlobHostUrl accountName) 443 "")
     pure $ case res of
         Left err -> do
