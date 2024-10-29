@@ -130,21 +130,23 @@ instance ToJSON AzureEmailRequest where
 
 {- | Smart constructor to build a send email request.
 
+This is very priliminary in nature and facilitates quickly building an email request
+with 1 recipient and sender with the content.
 There are few default settings that the caller needs to be aware of:
 1. @replyTo@ for recipient is the sender's email address. In case there needs to be multiple
    email addresses in @replyTo@ field, it is advised to build a custom request based on the
    exposed data types instead.
-2. Attachements are not included, yet.
+2. Attachements are not included.
 3. Enagagement tracking is disabled.
 -}
 newAzureEmailRequest ::
     SenderEmailAddress ->
-    EmailRecipients ->
+    EmailAddress ->
     EmailContent ->
     AzureEmailRequest
-newAzureEmailRequest senderAddress recipients content =
+newAzureEmailRequest senderAddress recipient content =
     let senderEmailAddress = EmailAddress senderAddress Text.empty
-     in AzureEmailRequest content recipients senderAddress [senderEmailAddress] [] True
+     in AzureEmailRequest content (EmailRecipients [] [] [recipient]) senderAddress [senderEmailAddress] [] True
 
 {- | Possible states once a send email action is triggered.
 Source: https://learn.microsoft.com/en-us/rest/api/communication/dataplane/email/send?view=rest-communication-dataplane-2023-03-31&tabs=HTTP#emailsendstatus
