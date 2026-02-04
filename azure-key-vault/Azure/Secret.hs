@@ -27,8 +27,9 @@ getSecret ::
     MonadIO m =>
     -- | Name of the secret
     SecretName ->
-    -- | Host to identify the key vault. This is where all the request will be
-    -- made. It is of the form @{keyvault-name}.vault.azure.net@
+    {- | Host to identify the key vault. This is where all the request will be
+    made. It is of the form @{keyvault-name}.vault.azure.net@
+    -}
     KeyVaultHost ->
     -- | Access token which will form part of the authentication header
     AccessToken ->
@@ -46,8 +47,9 @@ getSecretEither ::
     MonadIO m =>
     -- | Name of the secret
     SecretName ->
-    -- | Host to identify the key vault. This is where all the request will be
-    -- made. It is of the form @{keyvault-name}.vault.azure.net@
+    {- | Host to identify the key vault. This is where all the request will be
+    made. It is of the form @{keyvault-name}.vault.azure.net@
+    -}
     KeyVaultHost ->
     -- | Access token which will form part of the authentication header
     AccessToken ->
