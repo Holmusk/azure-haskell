@@ -4,15 +4,14 @@ module Main where
 
 import System.Directory (doesFileExist)
 
-import Azure.Auth (defaultAzureCredential)
+import Azure.Auth (defaultAzureCredential, newEmptyTokenCache, storageResource)
 import Azure.Blob.GetBlob (GetBlob (..), getBlobObject)
 import Azure.Blob.Types (AccountName (..), BlobName (..), ContainerName (..))
-import Azure.Types (newEmptyToken)
 
 main :: IO ()
 main = do
-    tok <- newEmptyToken
-    cred <- defaultAzureCredential Nothing "https://storage.azure.com" tok
+    cache <- newEmptyTokenCache
+    cred <- defaultAzureCredential Nothing storageResource cache
     -- In order to run this, you need to replace @AccountName@, @ContainerName@ and @BlobName@
     -- with appropriate values in your resource group. These are just dummy values.
     let account = AccountName "OneRepublic"

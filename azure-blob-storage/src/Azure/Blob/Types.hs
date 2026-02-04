@@ -78,16 +78,17 @@ instance ToXml UserDelegationRequest where
                 <> element "Expiry" HashMap.empty (text udrExpiryTime)
 
 data UserDelegationResponse = UserDelegationResponse
-    { udrSignedKeyOid :: Text
-    , udrSignedKeyStart :: Text
-    , udrSignedKeyExpiry :: Text
-    , udrSignedKeyService :: Text
-    , udrSignedKeyVersion :: Text
-    , udrSignedKeyTid :: Text
+    { udrSignedKeyOid :: !Text
+    , udrSignedKeyStart :: !Text
+    , udrSignedKeyExpiry :: !Text
+    , udrSignedKeyService :: !Text
+    , udrSignedKeyVersion :: !Text
+    , udrSignedKeyTid :: !Text
     -- ^ This the tenantID in which the service principle is defined
-    , udrValue :: Text
-    -- ^ User delegation key.
-    -- Note that this cannot be used to grant access to blob resource directly.
+    , udrValue :: !Text
+    {- ^ User delegation key.
+    Note that this cannot be used to grant access to blob resource directly.
+    -}
     }
     deriving stock (Eq, Show, Generic)
 

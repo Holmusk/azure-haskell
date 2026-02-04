@@ -1,21 +1,15 @@
-module Azure.Utils where
+module Azure.Utils
+    ( isExpired
+    ) where
 
-import Data.Time (getCurrentTime, secondsToNominalDiffTime)
-import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Data.Time.Clock.POSIX (POSIXTime, getPOSIXTime)
 import UnliftIO (MonadIO (..))
 
-import Azure.Types (ExpiresOn)
+{- | Check if an azure access token has expired.
 
-import qualified Data.Text as Text
-import qualified Text.Read as Text
-
--- | Check if an azure access token has expired
-isExpired :: MonadIO m => ExpiresOn -> m Bool
+Compares the expiration time against the current time.
+-}
+isExpired :: MonadIO m => POSIXTime -> m Bool
 isExpired expiresOn = do
-    let timestamp = posixSecondsToUTCTime . secondsToNominalDiffTime <$> Text.readMaybe (Text.unpack expiresOn)
-    case timestamp of
-        Just time -> do
-            currentTime <- liftIO getCurrentTime
-            return $ time <= currentTime
-        Nothing ->
-            return False
+    currentTime <- liftIO getPOSIXTime
+    pure $ expiresOn <= currentTime

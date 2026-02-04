@@ -2,8 +2,8 @@ cabal-version:      3.0
 name:               azure-auth
 version:            0.1.0.0
 synopsis:           Boilerplace/startkit for azure in Haskell (using servant)
-description:        This provides from useful functionalities for starting out with Azure in Haskell.
-                    This includes authentication, Key vault, Blob storage and email communication related APIs.
+description:        Provides Azure authentication mechanisms for Haskell applications,
+                    including Managed Identity authentication via Azure Instance Metadata Service (IMDS).
 license:            MIT
 author:             Holmusk
 maintainer:         tech@holmusk.com
